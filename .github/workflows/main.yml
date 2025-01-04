@@ -1,4 +1,4 @@
-name: React Vite CI
+name: React Vite CI with SonarQube
 
 on:
   push:
@@ -7,16 +7,19 @@ on:
     branches: [ master ]
 
 jobs:
-  build:
+  build-and-analyze:
+    name: Build and Analyze
     runs-on: ubuntu-latest
 
     strategy:
       matrix:
-        node-version: [23.x]  # Specify Node.js versions to test against
+        node-version: [23.x]
 
     steps:
-    - uses: actions/checkout@v3
-
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Required for SonarQube analysis
+    
     - name: Use Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v3
       with:
@@ -24,20 +27,19 @@ jobs:
         cache: 'npm'
 
     - name: Install dependencies
-      run: npm ci  # Uses package-lock.json for exact versions
+      run: npm ci
 
     - name: Lint check
       run: |
-        npm run lint || true  # Add '|| true' if you haven't set up linting yet
+        npm run lint || true
 
     - name: Run tests
       run: |
-        npm run test || true  # Add '|| true' if you haven't set up tests yet
+        npm run test || true
 
     - name: Build
       run: npm run build
 
-    # Optional: Cache the build output
     - name: Cache build
       uses: actions/cache@v3
       with:
@@ -48,9 +50,22 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-build-
 
-    # Optional: Upload build artifacts
     - name: Upload build artifacts
       uses: actions/upload-artifact@v3
       with:
         name: build-files
         path: dist/
+
+    # SonarQube Analysis
+    - name: SonarQube Scan
+      uses: sonarsource/sonarqube-scan-action@v4
+      env:
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+
+    # Optional: Fail workflow if quality gate fails
+    # - name: SonarQube Quality Gate
+    #   uses: sonarsource/sonarqube-quality-gate-action@v1
+    #   timeout-minutes: 5
+    #   env:
+    #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
