@@ -48,7 +48,7 @@ jobs:
         SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
       with:
         args: >
-          -Dsonar.projectKey=your-project-key
+          -Dsonar.projectKey=sqp_78c959e0b1328e54c50224665aa8ef8ab069f695
           -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
           -Dsonar.host.url=${{ secrets.SONAR_HOST_URL }}
 
