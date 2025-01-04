@@ -19,7 +19,7 @@ jobs:
     - uses: actions/checkout@v4
       with:
         fetch-depth: 0  # Required for SonarQube analysis
-    
+
     - name: Use Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v3
       with:
@@ -40,32 +40,25 @@ jobs:
     - name: Build
       run: npm run build
 
-    - name: Cache build
-      uses: actions/cache@v3
-      with:
-        path: |
-          dist
-          .cache
-        key: ${{ runner.os }}-build-${{ hashFiles('**/package-lock.json') }}
-        restore-keys: |
-          ${{ runner.os }}-build-
-
-    - name: Upload build artifacts
-      uses: actions/upload-artifact@v3
-      with:
-        name: build-files
-        path: dist/
-
-    # SonarQube Analysis
+    # SonarQube Scan
     - name: SonarQube Scan
       uses: sonarsource/sonarqube-scan-action@v4
       env:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+      with:
+        args: >
+          -Dsonar.projectKey=your-project-key
+          -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
+          -Dsonar.host.url=${{ secrets.SONAR_HOST_URL }}
 
-    # Optional: Fail workflow if quality gate fails
-    # - name: SonarQube Quality Gate
-    #   uses: sonarsource/sonarqube-quality-gate-action@v1
-    #   timeout-minutes: 5
-    #   env:
-    #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+    # Optional: Check Quality Gate
+    - name: Check SonarQube Quality Gate
+      uses: sonarsource/sonarqube-quality-gate-action@v1
+      env:
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+      # Force to fail step after specific time
+      timeout-minutes: 5
+      # Continue on error for pull requests
+      continue-on-error: true
